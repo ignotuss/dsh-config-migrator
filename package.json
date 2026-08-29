@@ -1,61 +1,10 @@
-{
-  "name": "dsh-config-migrator",
-  "description": "Export a DSH profile's plugins and configuration as a portable snapshot, and restore it on a fresh DSH instance",
+﻿{
+  "name": "dsh-config-migrator-workspace",
+  "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@11.7.0",
-  "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
-  "bin": {
-    "dsh-migrate": "bin/dsh-migrate.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "default": "./lib/index.js"
-    },
-    "./host": {
-      "types": "./lib/types/host/index.d.ts",
-      "default": "./lib/host.js"
-    },
-    "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "lib",
-    "bin",
-    "cordis.patch.yml"
-  ],
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    }
-  },
-  "license": "MIT",
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
-    "build": "tsdown && tsc -p tsconfig.types.json",
-    "watch": "tsdown --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"tests/*.spec.ts\"",
-    "prepublishOnly": "pnpm build && pnpm test"
-  },
-  "dependencies": {
-    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-home-paths": "^0.0.1-rc.3"
-  },
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.0",
-    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1"
-  },
-  "devDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1",
-    "@types/node": "^24.0.0",
-    "tsdown": "^0.22.14",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
   }
 }

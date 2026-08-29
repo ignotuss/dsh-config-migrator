@@ -1,5 +1,8 @@
-# Build scripts pnpm may run in this package's own repository installs.
-# (This file only affects THIS repo — when the package is installed into a
-# dsh profile, the profile's own pnpm-workspace.yaml governs, not this one.)
+# Workspace layout mirroring the DSH monorepo shape the typert generator's
+# analyzer expects (packages under packages/, tsconfig.host.json at the root).
+packages:
+  - packages/*
+
+# Build scripts pnpm may run in this repository's installs.
 allowBuilds:
   esbuild: true
