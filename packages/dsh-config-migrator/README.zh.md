@@ -4,9 +4,9 @@
 插件集合、精确版本、加载顺序、参数、启用/禁用状态，并用 boot-free 的
 `dsh --dump-config` 与快照基准逐行校验。
 
-> **状态：P1**。CLI + 引擎 + agent 工具已实现并通过验收（真实 profile 导出
-> → 全新 `$DSH_HOME` 恢复 → dump-config 与基准逐行一致）。设置页分区与
-> typert Remote 网关规划在 P2。
+> **状态：P1 完成。** CLI + 引擎 + agent 工具 + 设置页"配置迁移"分区 +
+> typert Remote 网关全部实现并通过验收（真实 profile 导出 → 全新 `$DSH_HOME`
+> 恢复 → dump-config 与基准逐行一致；活树 boot 验证工具注册与 RPC 网关加载）。
 
 ## 原理
 
@@ -64,10 +64,18 @@ dsh-migrate restore <快照目录> --profile 新名字 --with-home --yes
 ## 开发
 
 ```sh
+# 仓库根（workspace 布局：packages/dsh-config-migrator + packages/dsh-typert-protocol）
 pnpm install
+node packages/dsh-config-migrator/scripts/link-inbox.mjs <DSH checkout 路径>
+#  ^ 三件事：dsh-tools 开发 stub（类型 + 运行时 re-export）、
+#     vendor checkout 的 typert 生成器（npm 发布集 rc.1 生成器与 rc.6 协议不兼容）、
+#     junction client 开发类型（与浏览器模块表一致）
+pnpm build       # 协议包 tsc + 插件包 tsdown（typert 产物）+ client bundle
 pnpm test        # node:test + tsx，无需 boot
-pnpm build       # tsdown（lib/*.js）+ tsc（lib/types/*.d.ts）
 pnpm typecheck
 ```
+
+> 注意：`pnpm install` 会覆盖 node_modules 里的 junction/stub，
+> 重新安装依赖后需重跑 `link-inbox.mjs`。
 
 完整设计见 `DESIGN.md`。许可证：MIT。
