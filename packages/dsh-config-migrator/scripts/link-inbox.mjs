@@ -64,14 +64,63 @@ writeFileSync(join(stub, 'index.js'), [
 ].join('\n'))
 console.log(`dsh-tools stub -> ${toolsLib}`)
 
-// 2. typert generator junction over the registry copy.
-const genDir = join(pkg, 'node_modules', '@deepseek-ai', 'dsh-typert-generator')
-const genTarget = join(checkout, 'packages', 'typert', 'generator')
-if (existsSync(join(genTarget, 'lib', 'types', 'tsdown-plugin.js'))) {
-  rmSync(genDir, { recursive: true, force: true })
-  mkdirSync(dirname(genDir), { recursive: true })
-  symlinkSync(genTarget, genDir, process.platform === 'win32' ? 'junction' : 'dir')
-  console.log(`typert generator junction -> ${genTarget}`)
+// 2. Vendored checkout generator: the npm release is internally inconsistent
+//    (rc.1 generator vs rc.6 protocol), so the build imports the checkout's
+//    generator from scripts/vendor-typert2 (tsdown.config.ts resolves it by
+//    relative path). Copy its built lib and junction the checkout's
+//    node_modules so its own deps (typescript, zod, @jridgewell/*) resolve.
+const vendorDir = join(root, 'scripts', 'vendor-typert2')
+const genLib = join(checkout, 'packages', 'typert', 'generator', 'lib')
+if (existsSync(join(genLib, 'types', 'tsdown-plugin.js'))) {
+  rmSync(vendorDir, { recursive: true, force: true })
+  mkdirSync(vendorDir, { recursive: true })
+  const { cpSync } = await import('node:fs')
+  cpSync(genLib, vendorDir, { recursive: true })
+  mkdirSync(join(vendorDir, 'node_modules'), { recursive: true })
+  symlinkSync(join(checkout, 'node_modules'), join(vendorDir, 'node_modules', 'checkout-store'), process.platform === 'win32' ? 'junction' : 'dir')
+  console.log(`vendored typert generator -> ${vendorDir}`)
 } else {
-  console.log(`link-inbox: ${genTarget} not built — skipping the generator junction (Remote artifacts need it)`)
+  console.log(`link-inbox: ${genLib} not built — skipping generator vendoring (Remote artifacts need it)`)
+}
+
+// 3. Client dev types: the published client rc packages typecheck against a
+//    locale/slot map that predates third-party namespaces, and the registry
+//    has been flaky for their deep graphs — junction the checkout packages
+//    (types match the module table exactly; never bundled).
+const nm = join(pkg, 'node_modules')
+const clientLinks = {
+  '@deepseek-ai/dsh-client-runtime': 'packages/client/runtime',
+  '@deepseek-ai/dsh-client-ui-settings': 'packages/client/ui-settings',
+  '@deepseek-ai/dsh-client-ui-slots': 'packages/client/ui-slots',
+  '@deepseek-ai/dsh-client-locale': 'packages/client/locale',
+  '@deepseek-ai/dsh-client-connection': 'packages/client/connection',
+  '@deepseek-ai/dsh-api-remotes': 'packages/api/remotes',
+}
+for (const [name, relative] of Object.entries(clientLinks)) {
+  const source = join(checkout, relative)
+  if (!existsSync(join(source, 'package.json'))) continue
+  const dest = join(nm, ...name.split('/'))
+  rmSync(dest, { recursive: true, force: true })
+  mkdirSync(dirname(dest), { recursive: true })
+  symlinkSync(source, dest, process.platform === 'win32' ? 'junction' : 'dir')
+  console.log(`client dev link ${name} -> ${source}`)
+}
+// react + types from the checkout's pnpm store (not hoisted at the root).
+for (const [storePattern, name] of [
+  ['react@18*', 'react'],
+  ['@types+react@18*', '@types/react'],
+]) {
+  const store = join(checkout, 'node_modules', '.pnpm')
+  const match = readdirSync(store).find(entry => {
+    const base = entry.split('+', 2).join('+')
+    return base === storePattern.replace('*', '') || (storePattern.endsWith('*') && entry.startsWith(storePattern.slice(0, -1)))
+  })
+  if (match === undefined) continue
+  const source = join(store, match, 'node_modules', ...name.split('/'))
+  if (!existsSync(source)) continue
+  const dest = join(nm, ...name.split('/'))
+  rmSync(dest, { recursive: true, force: true })
+  mkdirSync(dirname(dest), { recursive: true })
+  symlinkSync(source, dest, process.platform === 'win32' ? 'junction' : 'dir')
+  console.log(`store link ${name} -> ${source}`)
 }
