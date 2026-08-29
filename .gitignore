@@ -1,0 +1,7 @@
+node_modules/
+lib/
+*.tsbuildinfo
+*.log
+
+# exported snapshots (never commit someone's config)
+dsh-migrate-*/

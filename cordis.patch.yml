@@ -1,0 +1,8 @@
+# dsh-config-migrator bundle patch: one insert over the empty profile root.
+# The package's host half registers the three migration tools; its engine is
+# also reachable from the CLI (dsh-migrate) and, in a later pass, the
+# settings-UI Remote gateway.
+
+- insert:
+    - id: config-migrator
+      name: 'dsh-config-migrator'

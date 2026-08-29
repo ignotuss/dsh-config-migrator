@@ -1,0 +1,5 @@
+# Build scripts pnpm may run in this package's own repository installs.
+# (This file only affects THIS repo — when the package is installed into a
+# dsh profile, the profile's own pnpm-workspace.yaml governs, not this one.)
+allowBuilds:
+  esbuild: true
