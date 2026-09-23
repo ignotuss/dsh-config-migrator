@@ -5,6 +5,10 @@
     "title": "dsh-config-migrator 插件架构",
     "output": "architecture.html",
     "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/ignotuss/dsh-config-migrator",
+      "revision": "25509c12b90f1a19b4fa2912720464c63be7c7f7"
+    },
     "views": [
       { "id": "export-path", "label": "导出路径", "focus": ["cli", "tools", "section", "gateway", "engine", "snapshot"], "note": "三条入口汇聚到 core 引擎，写出可移植快照目录。" },
       { "id": "restore-path", "label": "恢复路径", "focus": ["engine", "profile", "pnpm", "dshcli"], "note": "引擎落文件、pnpm 按 lockfile 装依赖，再由 dump-config 校验生效配置。" },
@@ -12,16 +16,64 @@
     ]
   },
   "components": [
-    { "id": "section", "type": "frontend", "label": "设置页「配置迁移」", "sublabel": "client.js · React 分区", "pos": [40, 60], "size": [176, 64] },
-    { "id": "cli", "type": "backend", "label": "CLI dsh-migrate", "sublabel": "export · inspect · restore", "pos": [40, 280], "size": [176, 64] },
-    { "id": "tools", "type": "backend", "label": "Agent 工具", "sublabel": "migrate_export · inspect · restore", "pos": [40, 480], "size": [176, 64] },
-    { "id": "gateway", "type": "backend", "label": "Host 网关", "sublabel": "ConfigMigratorGateway", "tag": "TypertRemoteService", "pos": [300, 60], "size": [186, 72] },
-    { "id": "engine", "type": "backend", "label": "Core 引擎", "sublabel": "boot-free · 不 boot cordis 树", "tag": "7 模块", "pos": [576, 280], "size": [186, 72] },
-    { "id": "typert", "type": "external", "label": "typert 协议", "sublabel": "Remote 贡献注册", "pos": [576, 60], "size": [186, 64] },
-    { "id": "snapshot", "type": "database", "label": "快照目录", "sublabel": "manifest.json · requirement.md", "tag": "脱敏真值文件", "pos": [862, 130], "size": [200, 72] },
-    { "id": "profile", "type": "database", "label": "目标 profile", "sublabel": "$DSH_HOME/profiles/<name>", "tag": "仅空 profile", "pos": [862, 430], "size": [200, 72] },
-    { "id": "dshcli", "type": "external", "label": "dsh CLI", "sublabel": "--dump-config 基准", "pos": [1150, 60], "size": [176, 64] },
-    { "id": "pnpm", "type": "external", "label": "pnpm", "sublabel": "--frozen-lockfile 安装", "pos": [1150, 280], "size": [176, 64] }
+    {
+      "id": "section", "type": "frontend", "label": "设置页「配置迁移」", "sublabel": "client.js · React 分区", "pos": [40, 60], "size": [176, 64],
+      "sources": [
+        { "path": "packages/dsh-config-migrator/src/client/index.ts", "line": 33, "label": "settings.section 注册" },
+        { "path": "packages/dsh-config-migrator/src/client/index.ts", "line": 42, "label": "ctx.remote.configMigrator" }
+      ]
+    },
+    {
+      "id": "cli", "type": "backend", "label": "CLI dsh-migrate", "sublabel": "export · inspect · restore", "pos": [40, 280], "size": [176, 64],
+      "sources": [{ "path": "packages/dsh-config-migrator/src/bin/cli.ts", "line": 213, "label": "三个子命令分派" }]
+    },
+    {
+      "id": "tools", "type": "backend", "label": "Agent 工具", "sublabel": "migrate_export · inspect · restore", "pos": [40, 480], "size": [176, 64],
+      "sources": [
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 79, "label": "migrate_export" },
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 111, "label": "migrate_inspect" },
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 129, "label": "migrate_restore" }
+      ]
+    },
+    {
+      "id": "gateway", "type": "backend", "label": "Host 网关", "sublabel": "ConfigMigratorGateway", "tag": "TypertRemoteService", "pos": [300, 60], "size": [186, 72],
+      "sources": [
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 73, "label": "网关类定义" },
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 168, "label": "@Remote 端点" },
+        { "path": "packages/dsh-config-migrator/src/host/remote.ts", "line": 239, "label": "默认导出" }
+      ]
+    },
+    {
+      "id": "engine", "type": "backend", "label": "Core 引擎", "sublabel": "boot-free · 不 boot cordis 树", "tag": "7 模块", "pos": [576, 280], "size": [186, 72],
+      "sources": [
+        { "path": "packages/dsh-config-migrator/src/core/pack.ts", "line": 289, "label": "exportSnapshot" },
+        { "path": "packages/dsh-config-migrator/src/core/unpack.ts", "line": 117, "label": "restoreSnapshot" },
+        { "path": "packages/dsh-config-migrator/src/core/verify.ts", "line": 82, "label": "verifyRestore" }
+      ]
+    },
+    {
+      "id": "typert", "type": "external", "label": "typert 协议", "sublabel": "Remote 贡献注册", "pos": [576, 60], "size": [186, 64],
+      "sources": [{ "path": "packages/dsh-config-migrator/package.json", "line": 25, "label": "./typert 导出" }]
+    },
+    {
+      "id": "snapshot", "type": "database", "label": "快照目录", "sublabel": "manifest.json · requirement.md", "tag": "脱敏真值文件", "pos": [862, 130], "size": [200, 72],
+      "sources": [
+        { "path": "packages/dsh-config-migrator/src/core/manifest.ts", "line": 10, "label": "manifest.json" },
+        { "path": "packages/dsh-config-migrator/src/core/report.ts", "line": 11, "label": "requirement.md" }
+      ]
+    },
+    {
+      "id": "profile", "type": "database", "label": "目标 profile", "sublabel": "$DSH_HOME/profiles/<name>", "tag": "仅空 profile", "pos": [862, 430], "size": [200, 72],
+      "sources": [{ "path": "packages/dsh-config-migrator/src/core/unpack.ts", "line": 117, "label": "恢复落盘" }]
+    },
+    {
+      "id": "dshcli", "type": "external", "label": "dsh CLI", "sublabel": "--dump-config 基准", "pos": [1150, 60], "size": [176, 64],
+      "sources": [{ "path": "packages/dsh-config-migrator/src/core/pack.ts", "line": 86, "label": "spawnDumpConfig" }]
+    },
+    {
+      "id": "pnpm", "type": "external", "label": "pnpm", "sublabel": "--frozen-lockfile 安装", "pos": [1150, 280], "size": [176, 64],
+      "sources": [{ "path": "packages/dsh-config-migrator/src/core/pnpm.ts", "line": 35, "label": "runPnpm" }]
+    }
   ],
   "connections": [
     { "id": "section-to-gateway", "from": "section", "to": "gateway", "label": "Remote RPC", "variant": "emphasis" },
