@@ -15,11 +15,15 @@
  * Usage: node scripts/link-inbox.mjs <path-to-dsh-checkout>
  */
 
-import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+// The script lives at <repo>/packages/dsh-config-migrator/scripts, so the
+// repository root is THREE levels up; two levels up is <repo>/packages, which
+// used to make every junction land in a parallel <repo>/packages/packages/...
+// tree while the real package kept its stale registry copies.
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const pkg = join(root, 'packages', 'dsh-config-migrator')
 
 const checkout = resolve(process.argv[2] ?? '')
@@ -76,8 +80,23 @@ if (existsSync(join(genLib, 'types', 'tsdown-plugin.js'))) {
   mkdirSync(vendorDir, { recursive: true })
   const { cpSync } = await import('node:fs')
   cpSync(genLib, vendorDir, { recursive: true })
+  // The generator is executed from vendorDir, so its bare imports must resolve
+  // from vendorDir/node_modules. A single `checkout-store` symlink cannot do
+  // that: Node only ever looks in `<dir>/node_modules/<name>`, never inside an
+  // arbitrarily named sibling, so every dependency has to be linked by its own
+  // name.
   mkdirSync(join(vendorDir, 'node_modules'), { recursive: true })
-  symlinkSync(join(checkout, 'node_modules'), join(vendorDir, 'node_modules', 'checkout-store'), process.platform === 'win32' ? 'junction' : 'dir')
+  for (const dependency of ['typescript', '@jridgewell/gen-mapping']) {
+    const source = join(checkout, 'node_modules', ...dependency.split('/'))
+    if (!existsSync(join(source, 'package.json'))) {
+      console.log(`link-inbox: ${dependency} not installed in the checkout — vendored generator may fail to build`)
+      continue
+    }
+    const dest = join(vendorDir, 'node_modules', ...dependency.split('/'))
+    rmSync(dest, { recursive: true, force: true })
+    mkdirSync(dirname(dest), { recursive: true })
+    symlinkSync(source, dest, process.platform === 'win32' ? 'junction' : 'dir')
+  }
   console.log(`vendored typert generator -> ${vendorDir}`)
 } else {
   console.log(`link-inbox: ${genLib} not built — skipping generator vendoring (Remote artifacts need it)`)

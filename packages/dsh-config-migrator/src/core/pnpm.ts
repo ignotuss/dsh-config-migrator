@@ -44,7 +44,16 @@ export function runPnpm(args: readonly string[], options: PnpmOptions): PnpmResu
   if (result.error !== undefined) {
     const code = (result.error as NodeJS.ErrnoException).code
     if (code === 'ENOENT') return { ok: false, exitCode: 127, stdout: '', stderr: PNPM_NOT_FOUND }
-    throw result.error
+    // A process-start failure is an install failure, not a gateway exception.
+    // Keep it inside the PnpmResult contract so restoreSnapshot can execute
+    // its staged-file rollback path. This matters on Windows where a denied
+    // cmd.exe spawn can surface as EPERM before pnpm gets a chance to run.
+    return {
+      ok: false,
+      exitCode: null,
+      stdout: result.stdout ?? '',
+      stderr: `pnpm 启动失败${code ? `（${code}）` : ''}: ${result.error.message}`,
+    }
   }
   return { ok: result.status === 0, exitCode: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' }
 }

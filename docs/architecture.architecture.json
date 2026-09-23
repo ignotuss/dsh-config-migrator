@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "dsh-config-migrator 插件架构",
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "export-path", "label": "导出路径", "focus": ["cli", "tools", "section", "gateway", "engine", "snapshot"], "note": "三条入口汇聚到 core 引擎，写出可移植快照目录。" },
+      { "id": "restore-path", "label": "恢复路径", "focus": ["engine", "profile", "pnpm", "dshcli"], "note": "引擎落文件、pnpm 按 lockfile 装依赖，再由 dump-config 校验生效配置。" },
+      { "id": "rpc-path", "label": "RPC 路径", "focus": ["section", "gateway", "typert", "engine"], "note": "浏览器分区经 typert Remote 调用宿主网关。" }
+    ]
+  },
+  "components": [
+    { "id": "section", "type": "frontend", "label": "设置页「配置迁移」", "sublabel": "client.js · React 分区", "pos": [40, 60], "size": [176, 64] },
+    { "id": "cli", "type": "backend", "label": "CLI dsh-migrate", "sublabel": "export · inspect · restore", "pos": [40, 280], "size": [176, 64] },
+    { "id": "tools", "type": "backend", "label": "Agent 工具", "sublabel": "migrate_export · inspect · restore", "pos": [40, 480], "size": [176, 64] },
+    { "id": "gateway", "type": "backend", "label": "Host 网关", "sublabel": "ConfigMigratorGateway", "tag": "TypertRemoteService", "pos": [300, 60], "size": [186, 72] },
+    { "id": "engine", "type": "backend", "label": "Core 引擎", "sublabel": "boot-free · 不 boot cordis 树", "tag": "7 模块", "pos": [576, 280], "size": [186, 72] },
+    { "id": "typert", "type": "external", "label": "typert 协议", "sublabel": "Remote 贡献注册", "pos": [576, 60], "size": [186, 64] },
+    { "id": "snapshot", "type": "database", "label": "快照目录", "sublabel": "manifest.json · requirement.md", "tag": "脱敏真值文件", "pos": [862, 130], "size": [200, 72] },
+    { "id": "profile", "type": "database", "label": "目标 profile", "sublabel": "$DSH_HOME/profiles/<name>", "tag": "仅空 profile", "pos": [862, 430], "size": [200, 72] },
+    { "id": "dshcli", "type": "external", "label": "dsh CLI", "sublabel": "--dump-config 基准", "pos": [1150, 60], "size": [176, 64] },
+    { "id": "pnpm", "type": "external", "label": "pnpm", "sublabel": "--frozen-lockfile 安装", "pos": [1150, 280], "size": [176, 64] }
+  ],
+  "connections": [
+    { "id": "section-to-gateway", "from": "section", "to": "gateway", "label": "Remote RPC", "variant": "emphasis" },
+    { "id": "gateway-to-typert", "from": "gateway", "to": "typert", "label": "发布 Remote 贡献" },
+    { "id": "gateway-to-engine", "from": "gateway", "to": "engine", "label": "@Remote 端点" },
+    { "id": "cli-to-engine", "from": "cli", "to": "engine" },
+    { "id": "tools-to-engine", "from": "tools", "to": "engine" },
+    { "id": "engine-to-snapshot", "from": "engine", "to": "snapshot", "label": "读写快照" },
+    { "id": "engine-to-profile", "from": "engine", "to": "profile", "label": "恢复写盘", "variant": "emphasis" },
+    { "id": "engine-to-dshcli", "from": "engine", "to": "dshcli", "label": "dump-config" },
+    { "id": "engine-to-pnpm", "from": "engine", "to": "pnpm", "label": "依赖安装" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "三条入口", "items": ["CLI dsh-migrate：export / inspect / restore", "设置页「配置迁移」分区经 Remote RPC 驱动宿主", "会话内 agent 工具，让模型直接完成迁移"] },
+    { "dot": "emerald", "title": "Core 引擎七模块", "items": ["manifest · redact · report：快照清单、脱敏、人读报表", "pack · unpack · pnpm：导出、恢复、依赖安装编排", "verify：dump-config 行结构校验（id 集合 + 禁用位）"] },
+    { "dot": "amber", "title": "可移植性边界", "items": ["密钥默认脱敏，恢复后按 redactions 清单补填", "link:/file: 依赖按绝对路径重建链接", "模板 bundle 由目标 DSH 安装提供，不由快照安装"] }
+  ]
+}

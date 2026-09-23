@@ -119,16 +119,26 @@ export function restoreSnapshot(options: RestoreOptions, probe: DshProbe = spawn
   const home = resolveDshHome()
   const warnings: string[] = []
 
+  // `--profile` names the DESTINATION profile (DESIGN.md §8.1: "目标名，默认用
+  // 原名") — it is how §7.1 tells users to avoid a conflict with an existing
+  // profile. The snapshot is addressed by its own profile key, so the two are
+  // resolved separately: renaming on restore must never be read back as a
+  // look-up into the snapshot.
   const names = Object.keys(manifest.profiles)
-  const profile = options.targetProfile ?? (names.length === 1 ? names[0] : undefined)
-  if (profile === undefined) {
+  const onlyProfile = names.length === 1 ? names[0]! : undefined
+  // Which profile inside the snapshot to read: the explicit destination name
+  // doubles as the selection key, else the snapshot's single profile.
+  const sourceProfile = onlyProfile ?? options.targetProfile
+  if (sourceProfile === undefined) {
     throw new Error(`snapshot 包含 ${names.length} 个 profile（${names.join(', ')}），请用 --profile 指定要恢复哪一个`)
   }
-  const entry = manifest.profiles[profile]
-  if (entry === undefined) throw new Error(`snapshot 不含 profile ${JSON.stringify(profile)}`)
+  const entry = manifest.profiles[sourceProfile]
+  if (entry === undefined) throw new Error(`snapshot 不含 profile ${JSON.stringify(sourceProfile)}`)
+  // Where to write it: an explicit name always wins (rename-on-restore).
+  const profile = options.targetProfile ?? sourceProfile
 
   const targetDir = resolveProfileDir(profile, home)
-  const snapshotProfileDir = join(options.snapshotDir, 'profiles', profile)
+  const snapshotProfileDir = join(options.snapshotDir, 'profiles', sourceProfile)
 
   if (!isEffectivelyEmpty(targetDir)) {
     throw new Error(

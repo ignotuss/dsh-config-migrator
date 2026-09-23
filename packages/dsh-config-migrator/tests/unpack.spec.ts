@@ -266,4 +266,43 @@ describe('restoreSnapshot', () => {
       /--profile/,
     )
   })
+
+  it('restores a single-profile snapshot under a NEW target name (rename on restore)', () => {
+    withHomes((snapshotDir, targetHome) => {
+      const { calls, runner } = makePnpmStub()
+      const report = restoreSnapshot(
+        { snapshotDir, targetProfile: 'fresh-copy', withHome: false, force: false, dryRun: false, pnpmRunner: runner },
+        fakeProbe,
+      )
+      // The destination name is the target profile directory…
+      assert.equal(report.profile, 'fresh-copy')
+      assert.equal(report.installed, true)
+      assert.ok(calls[0]!.cwd.endsWith(join('profiles', 'fresh-copy')))
+      // …while the snapshot is still read from its own profile key (`demo`).
+      assert.ok(existsSync(join(targetHome, 'profiles', 'fresh-copy', 'package.json')))
+      assert.equal(existsSync(join(targetHome, 'profiles', 'demo')), false)
+      assert.equal(report.verification.status, 'verified')
+    })
+  })
+
+  it('names the destination in the plan and rejects a taken target name', () => {
+    withHomes((snapshotDir, targetHome) => {
+      const { runner } = makePnpmStub()
+      const plan = restoreSnapshot(
+        { snapshotDir, targetProfile: 'fresh-copy', withHome: false, force: false, dryRun: true, pnpmRunner: runner },
+        fakeProbe,
+      )
+      assert.ok(plan.plan[0]!.includes('fresh-copy'))
+
+      mkdirSync(join(targetHome, 'profiles', 'taken'), { recursive: true })
+      writeFileSync(join(targetHome, 'profiles', 'taken', 'package.json'), '{}')
+      assert.throws(
+        () => restoreSnapshot(
+          { snapshotDir, targetProfile: 'taken', withHome: false, force: false, dryRun: true, pnpmRunner: runner },
+          fakeProbe,
+        ),
+        /非空/,
+      )
+    })
+  })
 })

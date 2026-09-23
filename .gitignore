@@ -7,3 +7,6 @@ dist/
 
 # exported snapshots (never commit someone's config)
 dsh-migrate-*/
+
+# local real-dsh acceptance home (isolated $DSH_HOME with live profile links)
+.dsh-accept/
