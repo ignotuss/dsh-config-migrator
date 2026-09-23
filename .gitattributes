@@ -1,0 +1,8 @@
+# Generated and vendored files: keep the exact bytes the tool wrote.
+# `scripts/link-inbox.mjs` copies the DSH checkout's typert generator into
+# scripts/vendor-typert2, and `pnpm --filter dsh-typert-protocol build` writes
+# packages/dsh-typert-protocol/lib. Both tools emit LF, so with the default
+# core.autocrlf=true every rebuild dirtied the working tree with EOL-only
+# changes that carried no real content. Marking them -text stops the churn.
+/scripts/vendor-typert2/ -text
+/packages/dsh-typert-protocol/lib/ -text

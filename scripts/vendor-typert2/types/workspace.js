@@ -36,13 +36,11 @@ export class WorkspaceTypertGenerator {
      */
     generate(packages, faces) {
         const selected = packages ?? this.discover(faces).map(candidate => candidate.package);
-        console.error('[typert-dbg] generate: selected=' + JSON.stringify(selected));
         const workspace = new WorkspaceAnalyzer({
             root: this.root,
             packages: selected,
             ...(faces === undefined ? {} : { faces }),
         }).analyze();
-        console.error('[typert-dbg] generate: faces=' + workspace.faces.map(face => face.face + '(' + face.packages.map(p => p.name).join(',') + ')').join(' '));
         const artifacts = [];
         for (const face of workspace.faces) {
             const emitter = new FaceModelEmitter(face);

@@ -44,9 +44,7 @@ export function typertPlugin(pluginOptions = {}) {
             // a nested output such as <package>/lib/dev.
             if (bundleOptions.dir === undefined)
                 return;
-            console.error('[typert-dbg] writeBundle dir=' + bundleOptions.dir);
             const root = workspaceRoot(bundleOptions.dir);
-            console.error('[typert-dbg] workspaceRoot=' + root);
             if (emittedWorkspaces.has(root))
                 return;
             if (pluginOptions.mode === 'workspace') {
@@ -58,7 +56,6 @@ export function typertPlugin(pluginOptions = {}) {
             if (packageDir === undefined)
                 return;
             const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'));
-            console.error('[typert-dbg] packageDir=' + packageDir + ' hasTypert=' + hasTypertExport(manifest.exports));
             if (manifest.name === undefined || !hasTypertExport(manifest.exports))
                 return;
             let artifacts = artifactsByRoot.get(root);
